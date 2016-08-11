@@ -8,6 +8,9 @@ Unbiased histogram method (moving sum).
 ### [MINMAX](minmax)
 Generalized median-style filter.
 
+### [DECIM](decim)
+Fast data decimation.
+
 ### [HARMFIT](harmfit)
 Sinusoidal harmonic curve fitting.
 

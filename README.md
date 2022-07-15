@@ -1,6 +1,6 @@
-# num-matlab
+# num-lib
 
-Various generic functions in Matlab/Octave for signal or numerical processing.
+Various generic functions mostly written in Matlab/Octave for signal or numerical processing.
 
 ### [MOVSUM](movsum)
 Unbiased histogram method (moving sum).

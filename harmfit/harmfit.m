@@ -30,9 +30,9 @@ function [h,yy] = harmfit(x,y,n)
 %	Author: François Beauducel <beauducel@ipgp.fr>
 %		Institut de Physique du Globe de Paris
 %	Created: 2014-05-22
-%	Updated: 2015-02-10
+%	Updated: 2021-01-11
 
-%	Copyright (c) 2015, François Beauducel, covered by BSD License.
+%	Copyright (c) 2014-2021, François Beauducel, covered by BSD License.
 %	All rights reserved.
 %
 %	Redistribution and use in source and binary forms, with or without 
@@ -72,11 +72,11 @@ if ~isnumeric(n) || any(fix(n) ~= n)
 	error('N argument must be positive integers.')
 end
 
-k = find(all(~isnan([x,y]),2));
+k = all(~isnan([x,y]),2);
 n = n(:)';
 nn = length(n);
 
-c = mean(repmat(y(k),1,nn).*exp(-1j*repmat(x(k),1,nn).*repmat(n,length(k),1)));
+c = mean(repmat(y(k),1,nn).*exp(-1j*repmat(x(k),1,nn).*repmat(n,sum(k),1)));
 
 h = [n;2*abs(c);angle(c)]';
 

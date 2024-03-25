@@ -1,38 +1,40 @@
-function [h,yy] = harmfit(x,y,n)
+function varargout = harmfit(x,y,varargin)
 %HARMFIT Sinusoidal harmonic curve fitting.
-%	H = HARMFIT(X,Y) returns first harmonic amplitude and phase of the data
-%	vector Y relative to phase vector X (in radian) in a 3-element vector
-%	H = [N,AMP,PHA], so that AMP*COS(N*X + PHA) fits Y.
+%	H = HARMFIT(X,Y,N) computes the N'th harmonic amplitude and phase of the
+%   data vector Y relative to phase vector X (in radian), and returns result
+%   in a 3-element vector H = [N,AMP,PHA], so that AMP*COS(N*X + PHA) fits Y.
 %
-%	HARMFIT(X,Y,N) computes the N'th harmonic. N = 1 stands for fundamental,
-%	N = 2 is second harmonic, etc... N can be a scalar or a vector of 
-%	positive integers. For example use N = 1:4 to compute the first four
-%	harmonics.
+%	N = 1 (default) stands for the fundamental, N = 2 is second harmonic,
+%   etc... N can be a scalar or a vector of positive integers. For example,
+%   use N = 1:3 to compute the first three harmonics.
 %
 %	[H,YY] = HARMFIT(...) returns also an evaluation of harmonic curve fit
-%	in vector YY (as the sum of harmonics defined in N).
+%	in vector YY (as the sum of harmonics defined in N, adding a constant as
+%   the mean of Y).
 %
-%	This is simply the core calculation of discrete Fourier transform.
-%	For calculation, HARMFIT uses only real values of X and Y (not NaN) and
-%	truncates X (and Y) at the largest 2*PI integer multiple.
+%   HARMFIT without output argument or with 'plot' input argument option 
+%   will display and plot a figure of results.
+%
+%	Note: This is simply the core calculation of discrete Fourier transform.
+%	For calculation, HARMFIT uses only defined values of X and Y (not NaN) 
+%	and truncates X (and Y) at the largest 2*PI integer multiple. This implies
+%   that X must contain at least one sample greater of equal to 2*PI.
 %
 %	Example:
-%	   t = linspace(0,2*pi)';
+%	   t = linspace(0,2*pi);
 %	   x = 2*cos(t + pi/2) - cos(3*t) + rand(size(t));
-%	   [h,y] = harmfit(t,x,1:4);
-%	   display(h)
-%	   plot(t,[x,y])
+%	   harmfit(t,x,1:4,'plot')
 %
-%	returns estimations of amplitudes/phases for the first four harmonics.
-%	Note that negative amplitudes are fitted with positive value and a PI
-%	phase difference. 
+%	displays estimation of amplitudes/phases for the first four harmonics and
+%	plots the result. Note that negative amplitudes are fitted with positive 
+%	value and a PI phase difference. 
 %
-%	Author: François Beauducel <beauducel@ipgp.fr>
+%	Author: FranÃ§ois Beauducel <beauducel@ipgp.fr>
 %		Institut de Physique du Globe de Paris
 %	Created: 2014-05-22
-%	Updated: 2021-01-11
+%	Updated: 2024-03-24
 
-%	Copyright (c) 2014-2021, François Beauducel, covered by BSD License.
+%	Copyright (c) 2014-2024, FranÃ§ois Beauducel, covered by BSD License.
 %	All rights reserved.
 %
 %	Redistribution and use in source and binary forms, with or without 
@@ -57,8 +59,13 @@ function [h,yy] = harmfit(x,y,n)
 %	ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 %	POSSIBILITY OF SUCH DAMAGE.
 
-if nargin < 3
-	n = 1;
+n = 1;
+fplot = false;
+if nargout == 0 || any(strcmpi(varargin,'plot'))
+	fplot = true;
+end
+if nargin > 2 && isnumeric(varargin{1})
+	n = varargin{1};
 end
 
 if ~isnumeric(x) || ~isnumeric(y) || ~all(size(x)==size(y))
@@ -72,17 +79,36 @@ if ~isnumeric(n) || any(fix(n) ~= n)
 	error('N argument must be positive integers.')
 end
 
-k = all(~isnan([x,y]),2);
+% selects 
+k = all(~isnan([x,y]),2) & x - min(x) < 2*pi*floor((max(x)-min(x))/(2*pi));
 n = n(:)';
 nn = length(n);
 
+% computes the complex sum
 c = mean(repmat(y(k),1,nn).*exp(-1j*repmat(x(k),1,nn).*repmat(n,sum(k),1)));
-
 h = [n;2*abs(c);angle(c)]';
 
+m = length(x);
+amp = repmat(h(:,2)',m,1);
+pha = repmat(h(:,3)',m,1);
+yy = sum(amp.*cos(repmat(x,1,nn).*repmat(n,m,1) + pha),2) + mean(y(k));
+
+if nargout > 0
+    varargout{1} = h;
+else
+    fprintf('Harmonic #%d: amp %g, pha %g\n',h');
+end
+
 if nargout > 1
-	m = length(x);
-	amp = repmat(h(:,2)',m,1);
-	pha = repmat(h(:,3)',m,1);
-	yy = sum(amp.*cos(repmat(x,1,nn).*repmat(n,m,1) + pha),2) + mean(y(k));
+	varargout{2} = yy;
+end
+
+if fplot
+    figure
+    plot(x,[y,yy],'LineWidth',2);
+    if exist('phasetick','file')
+        phasetick('x')
+    end
+    title('harmfit.m')
+    xlabel('Phase (rad)')
 end

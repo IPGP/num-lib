@@ -1,19 +1,20 @@
 function varargout = harmfit(x,y,varargin)
 %HARMFIT Sinusoidal harmonic curve fitting.
 %	H = HARMFIT(X,Y,N) computes the N'th harmonic amplitude and phase of the
-%   data vector Y relative to phase vector X (in radian), and returns result
-%   in a 3-element vector H = [N,AMP,PHA], so that AMP*COS(N*X + PHA) fits Y.
+%	data vector Y relative to phase vector X (in radian), and returns result
+%	in a 4-element vector H = [N,AMP,PHA,STD], so that AMP*COS(N*X + PHA) 
+%	fits Y, STD is the standard deviation of AMP residual.
 %
 %	N = 1 (default) stands for the fundamental, N = 2 is second harmonic,
-%   etc... N can be a scalar or a vector of positive integers. For example,
-%   use N = 1:3 to compute the first three harmonics.
+%	etc... N can be a scalar or a vector of positive integers. For example,
+%	use N = 1:3 to compute the first three harmonics.
 %
 %	[H,YY] = HARMFIT(...) returns also an evaluation of harmonic curve fit
 %	in vector YY (as the sum of harmonics defined in N, adding a constant as
-%   the mean of Y).
+%	the mean of Y).
 %
-%   HARMFIT without output argument or with 'plot' input argument option 
-%   will display and plot a figure of results.
+%	HARMFIT without output argument or with 'plot' input argument option 
+%	will display and plot a figure of results.
 %
 %	Note: This is simply the core calculation of discrete Fourier transform.
 %	For calculation, HARMFIT uses only defined values of X and Y (not NaN) 
@@ -32,7 +33,7 @@ function varargout = harmfit(x,y,varargin)
 %	Author: François Beauducel <beauducel@ipgp.fr>
 %		Institut de Physique du Globe de Paris
 %	Created: 2014-05-22
-%	Updated: 2024-03-24
+%	Updated: 2025-05-22
 
 %	Copyright (c) 2014-2024, François Beauducel, covered by BSD License.
 %	All rights reserved.
@@ -64,11 +65,12 @@ fplot = false;
 if nargout == 0 || any(strcmpi(varargin,'plot'))
 	fplot = true;
 end
+fcrop = ~any(strcmpi(varargin,'nocrop'));
 if nargin > 2 && isnumeric(varargin{1})
 	n = varargin{1};
 end
 
-if ~isnumeric(x) || ~isnumeric(y) || ~all(size(x)==size(y))
+if ~isnumeric(x) || ~isnumeric(y) || numel(x) ~= numel(y)
 	error('X and Y must be vector of the same size.')
 else
 	x = x(:);
@@ -80,11 +82,11 @@ if ~isnumeric(n) || any(fix(n) ~= n)
 end
 
 % selects 
-k = all(~isnan([x,y]),2) & x - min(x) < 2*pi*floor((max(x)-min(x))/(2*pi));
+k = all(~isnan([x,y]),2) & (~fcrop | x - min(x) < 2*pi*floor((max(x)-min(x))/(2*pi)));
 n = n(:)';
 nn = length(n);
 
-% computes the complex sum
+% computes the complex mean
 c = mean(repmat(y(k),1,nn).*exp(-1j*repmat(x(k),1,nn).*repmat(n,sum(k),1)));
 h = [n;2*abs(c);angle(c)]';
 
@@ -93,10 +95,13 @@ amp = repmat(h(:,2)',m,1);
 pha = repmat(h(:,3)',m,1);
 yy = sum(amp.*cos(repmat(x,1,nn).*repmat(n,m,1) + pha),2) + mean(y(k));
 
+% std of residual
+h = [h,std(repmat(y,1,nn)-yy)'];
+
 if nargout > 0
     varargout{1} = h;
 else
-    fprintf('Harmonic #%d: amp %g, pha %g\n',h');
+    fprintf('Harmonic #%d: amp %g ± %g, pha %g\n',h(:,[1,2,4,3])');
 end
 
 if nargout > 1

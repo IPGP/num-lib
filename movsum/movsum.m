@@ -29,10 +29,10 @@
 %
 %   MOVSUM(...) without output arguments produces a plot of the results.
 %
-%	Author: François Beauducel <beauducel@ipgp.fr>
+%	Author: FranÃ§ois Beauducel <beauducel@ipgp.fr>
 %		Institut de Physique du Globe de Paris
 %	Created: 2005
-%	Updated: 2010-10-10
+%	Updated: 2023-08-30
 %
 
 %	Development history:
@@ -41,9 +41,14 @@
 %
 %		[2010-10-06]
 %			- makes advanced script with input argument check, help and
-%			plot. 
+%			plot.
 %
-%	Copyright (c) 2005-2010, François Beauducel, covered by BSD License.
+%		[2023-08-30]
+%			- fixes many typo
+%			- simplifies argument checking
+%			- improves data indexing
+%
+%	Copyright (c) 2005-2023, FranÃ§ois Beauducel, covered by BSD License.
 %	All rights reserved.
 %
 %	Redistribution and use in source and binary forms, with or without 
@@ -68,8 +73,6 @@
 %	ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 %	POSSIBILITY OF SUCH DAMAGE.
 
-error(nargchk(2,4,nargin));
-
 switch nargin
 
 	case 2
@@ -79,7 +82,7 @@ switch nargin
 		if ~isnumeric(x)
 			error('X argument must be numeric.')
 		end
-		if ~isnumeric(n) | numel(n) ~= 1 | n < 0 | mod(n,1) ~= 0
+		if ~isnumeric(n) || numel(n) ~= 1 || n < 0 || mod(n,1) ~= 0
 			error('N argument must be a scalar positive integer.')
 		end
 		if size(x,1) == 1
@@ -96,10 +99,10 @@ switch nargin
 		if size(x,1) == 1
 			x = x';
 		end
-		if ~isnumeric(t) | ~isnumeric(x) | size(t,1) ~= size(x,1)
+		if ~isnumeric(t) || ~isnumeric(x) || size(t,1) ~= size(x,1)
 			error('T and X must be numeric with same number of rows.')
 		end
-		if ~isnumeric(n) | numel(n) ~= 1 | n < 0 | mod(n,1) ~= 0
+		if ~isnumeric(n) || numel(n) ~= 1 || n < 0 || mod(n,1) ~= 0
 			error('N argument must be a scalar positive integer.')
 		end
 		
@@ -109,7 +112,7 @@ switch nargin
 		if dtx <= 0
 			error('T must be monotonic non decreasing vector.');
 		end
-		if any(rem(dt,dtx)) ~= 0
+		if any(rem(dt,dtx))
 			error('Cannot find a constant sampling interval for T.');
 		end
 		
@@ -122,17 +125,19 @@ switch nargin
 		if size(x,1) == 1
 			x = x';
 		end
-		if ~isnumeric(t) | ~isnumeric(x) | size(t,1) ~= size(x,1)
+		if ~isnumeric(t) || ~isnumeric(x) || size(t,1) ~= size(x,1)
 			error('T and X must be numeric with same number of rows.')
 		end
-		if ~isnumeric(dtx) | numel(dtx) ~= 1 | dtx < 0
+		if ~isnumeric(dtx) || numel(dtx) ~= 1 || dtx < 0
 			error('DTX argument must be a positive scalar.')
 		end
-		if ~isnumeric(dty) | numel(dty) ~= 1 | dty < 0 | rem(dty,dtx) ~= 0
+		if ~isnumeric(dty) || numel(dty) ~= 1 || dty < 0 || rem(dty,dtx) ~= 0
 			error('DTY argument must be a positive scalar multiple of DTX.')
 		end
 		n = dty/dtx;
-			
+		
+	otherwise
+		error('Wrong number of arguments.');
 end
 
 if nargin > 2
@@ -142,8 +147,7 @@ if nargin > 2
 	%resamples vector x into xc
 	xc = zeros(size(tc));
 	for i = 1:numel(tc)
-		k = find(t >= (tc(i) - r) & t < (tc(i) + r));
-		xc(i) = sum(x(k));
+		xc(i) = sum(x(t >= (tc(i) - r) & t < (tc(i) + r)));
 	end
 end
 

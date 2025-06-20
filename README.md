@@ -20,6 +20,8 @@ Round with fixed significant digits.
 ### [NUM2ROMAN and ROMAN2NUM](https://github.com/beaudu/romanum)
 Modern Roman numerals conversion.
 
+### [HICUM](hicum)
+Phase histogram stacking method.
 
 ## Author
 **François Beauducel**, [IPGP](www.ipgp.fr), [beaudu](https://github.com/beaudu), beauducel@ipgp.fr
